@@ -1,0 +1,79 @@
+using UnityEngine;
+using UnityEngine.Tilemaps;
+
+public class BoardManager : MonoBehaviour
+{
+    public PlayerController Player;
+    private Grid m_Grid;
+
+    // 嵌套格子数据类
+    public class CellData
+    {
+        public bool Passable;
+    }
+
+    private CellData[,] m_BoardData;
+    private Tilemap m_Tilemap;
+    public int Width;
+    public int Height;
+    public Tile[] GroundTiles;
+    public Tile[] WallTiles;
+
+    void Start()
+    {
+        // 1. 获取Grid、Tilemap组件
+        m_Grid = GetComponentInChildren<Grid>();
+        m_Tilemap = GetComponentInChildren<Tilemap>();
+        // 2. 初始化格子数据数组
+        m_BoardData = new CellData[Width, Height];
+
+        // 3. 循环生成地图瓦片与通行数据
+        for (int y = 0; y < Height; ++y)
+        {
+            for (int x = 0; x < Width; ++x)
+            {
+                Tile tile;
+                m_BoardData[x, y] = new CellData();
+
+                if (x == 0 || y == 0 || x == Width - 1 || y == Height - 1)
+                {
+                    tile = WallTiles[Random.Range(0, WallTiles.Length)];
+                    m_BoardData[x, y].Passable = false;
+                }
+                else
+                {
+                    tile = GroundTiles[Random.Range(0, GroundTiles.Length)];
+                    m_BoardData[x, y].Passable = true;
+                }
+                m_Tilemap.SetTile(new Vector3Int(x, y, 0), tile);
+            }
+        }
+
+        // 4. 地图生成完毕后，生成玩家
+        Player.Spawn(this, new Vector2Int(1, 1));
+    }
+
+    // 格子坐标转世界坐标
+    public Vector3 CellToWorld(Vector2Int cellIndex)
+    {
+        return m_Grid.GetCellCenterWorld((Vector3Int)cellIndex);
+    }
+
+    // 新增：格子查询接口（带越界判断）
+    public CellData GetCellData(Vector2Int cellIndex)
+    {
+        if (cellIndex.x < 0 || cellIndex.x >= Width
+            || cellIndex.y < 0 || cellIndex.y >= Height)
+        {
+            return null;
+        }
+        return m_BoardData[cellIndex.x, cellIndex.y];
+    }
+
+    // 通行判断工具方法
+    public bool IsCellPassable(int x, int y)
+    {
+        CellData cell = GetCellData(new Vector2Int(x, y));
+        return cell != null && cell.Passable;
+    }
+}
