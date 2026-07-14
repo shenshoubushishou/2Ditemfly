@@ -1,0 +1,50 @@
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+public class PlayerController : MonoBehaviour
+{
+    // 玩家的刚体组件
+    private Rigidbody rb;
+    // X轴和Y轴的移动输入值
+    private float movementX;
+    private float movementY;
+    // 玩家移动速度（Inspector面板可调整，运行前赋值大于0的数值）
+    public float speed = 0;
+
+    // Start 函数在第一帧更新前调用
+    void Start()
+    {
+        // 获取并存储挂载在玩家对象上的 Rigidbody 组件
+        rb = GetComponent<Rigidbody>();
+    }
+
+    // 检测到移动输入时自动调用此函数（Input System输入回调）
+    void OnMove(InputValue movementValue)
+    {
+        // 将输入值转换为用于移动的 Vector2 二维向量
+        Vector2 movementVector = movementValue.Get<Vector2>();
+        // 分别存储移动向量的 X 轴、Y 轴分量
+        movementX = movementVector.x;
+        movementY = movementVector.y;
+    }
+
+    // FixedUpdate 在固定物理帧率中调用，专门处理刚体物理移动
+    private void FixedUpdate()
+    {
+        // 利用 X/Y 输入值构建3D世界移动向量，Y轴锁定为0，仅地面移动
+        Vector3 movement = new Vector3(movementX, 0.0f, movementY);
+        // 对刚体施加持续作用力，实现玩家移动
+        rb.AddForce(movement * speed);
+    }
+
+    // 触发型碰撞进入事件，物体碰撞到勾选Is Trigger的碰撞体时执行
+    void OnTriggerEnter(Collider other)
+    {
+        // 判断碰撞对象标签是否为 "PickUp"（拾取物）
+        if (other.gameObject.CompareTag("PickUp"))
+        {
+            // 禁用拾取物，使其从场景消失
+            other.gameObject.SetActive(false);
+        }
+    }
+}
