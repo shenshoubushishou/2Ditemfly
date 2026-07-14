@@ -1,0 +1,25 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class CameraController : MonoBehaviour
+{
+    // 指向玩家游戏对象的引用，Inspector面板拖拽赋值
+    public GameObject player;
+    // 摄像机与玩家之间的初始偏移距离
+    private Vector3 offset;
+
+    // Start函数：游戏运行第一帧执行
+    void Start()
+    {
+        // 计算相机与玩家初始位置的差值，固定跟随距离
+        offset = transform.position - player.transform.position;
+    }
+
+    // LateUpdate：所有物体Update执行完毕后再运行
+    void LateUpdate()
+    {
+        // 每帧刷新相机位置，始终保持和玩家的偏移量不变，实现跟随
+        transform.position = player.transform.position + offset;
+    }
+}
