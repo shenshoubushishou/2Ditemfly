@@ -1,0 +1,107 @@
+using UnityEngine;
+
+public class Enemy : CellObject
+{
+    public int Health = 3;
+    private int m_CurrentHealth;
+
+    private void Awake()
+    {
+        GameManager.Instance.TurnManager.OnTick += TurnHappened;
+    }
+
+    private void OnDestroy()
+    {
+        // 取消事件订阅，防止空调用报错
+        GameManager.Instance.TurnManager.OnTick -= TurnHappened;
+    }
+
+    public override void Init(Vector2Int coord)
+    {
+        base.Init(coord);
+        m_CurrentHealth = Health;
+    }
+
+    public override bool PlayerWantsToEnter()
+    {
+        // 玩家撞击怪物，怪物扣血
+        m_CurrentHealth -= 1;
+        if (m_CurrentHealth <= 0)
+        {
+            Destroy(gameObject);
+        }
+        // 始终阻挡玩家进入怪物格子
+        return false;
+    }
+
+    // 尝试移动到目标格子，返回true代表移动成功
+    bool MoveTo(Vector2Int coord)
+    {
+        var board = GameManager.Instance.BoardManager;
+        var targetCell = board.GetCellData(coord);
+        // 格子越界 / 不可通行 / 已有物体，无法移动
+        if (targetCell == null || !targetCell.Passable || targetCell.ContainedObject != null)
+        {
+            return false;
+        }
+        // 清空原格子绑定
+        var currentCell = board.GetCellData(m_Cell);
+        currentCell.ContainedObject = null;
+        // 绑定新格子
+        targetCell.ContainedObject = this;
+        m_Cell = coord;
+        transform.position = board.CellToWorld(coord);
+        return true;
+    }
+
+    // 每回合自动执行AI逻辑
+    void TurnHappened()
+    {
+        // 获取玩家当前坐标
+        var playerCell = GameManager.Instance.PlayerController.Cell;
+        int xDist = playerCell.x - m_Cell.x;
+        int yDist = playerCell.y - m_Cell.y;
+        int absXDist = Mathf.Abs(xDist);
+        int absYDist = Mathf.Abs(yDist);
+
+        // 与玩家上下左右相邻，攻击玩家扣3食物
+        if ((xDist == 0 && absYDist == 1) || (yDist == 0 && absXDist == 1))
+        {
+            GameManager.Instance.ChangeFood(-3);
+        }
+        else
+        {
+            // 优先向距离更远的轴移动追击玩家
+            if (absXDist > absYDist)
+            {
+                if (!TryMoveInX(xDist))
+                {
+                    TryMoveInY(yDist);
+                }
+            }
+            else
+            {
+                if (!TryMoveInY(yDist))
+                {
+                    TryMoveInX(xDist);
+                }
+            }
+        }
+    }
+
+    // 尝试沿X轴向玩家方向移动
+    bool TryMoveInX(int xDist)
+    {
+        if (xDist > 0)
+            return MoveTo(m_Cell + Vector2Int.right);
+        return MoveTo(m_Cell + Vector2Int.left);
+    }
+
+    // 尝试沿Y轴向玩家方向移动
+    bool TryMoveInY(int yDist)
+    {
+        if (yDist > 0)
+            return MoveTo(m_Cell + Vector2Int.up);
+        return MoveTo(m_Cell + Vector2Int.down);
+    }
+}
