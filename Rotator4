@@ -1,0 +1,11 @@
+using UnityEngine;
+
+public class Rotator : MonoBehaviour
+{
+    // Update 函数每帧调用一次
+    void Update()
+    {
+        // 按指定角度绕 X、Y、Z 轴旋转对象，并根据帧率做适配
+        transform.Rotate(new Vector3(15, 30, 45) * Time.deltaTime);
+    }
+}
