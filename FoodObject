@@ -1,0 +1,12 @@
+using UnityEngine;
+
+public class FoodObject : CellObject
+{
+    public int FoodAmount = 10;
+
+    public override void PlayerEntered()
+    {
+        Debug.Log($"拾取食物，获得{FoodAmount}点");
+        Destroy(gameObject);
+    }
+}
