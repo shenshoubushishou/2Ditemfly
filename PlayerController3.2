@@ -1,0 +1,45 @@
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+public class PlayerController : MonoBehaviour
+{
+    // 游戏结束标记
+    private bool m_IsGameOver;
+
+    // 重置游戏结束状态（开局/下一关调用）
+    public void Init()
+    {
+        m_IsGameOver = false;
+    }
+
+    // 触发游戏结束，锁定玩家输入
+    public void GameOver()
+    {
+        m_IsGameOver = true;
+    }
+
+    private void Update()
+    {
+        // 游戏结束逻辑放在最顶部
+        if (m_IsGameOver)
+        {
+            // 按下Enter键重新开局
+            if (Keyboard.current.enterKey.wasPressedThisFrame)
+            {
+                GameManager.Instance.StartNewGame();
+            }
+            // 直接返回，不再执行移动逻辑
+            return;
+        }
+
+        // ======================
+        // 下方原有玩家移动输入逻辑
+        // ======================
+    }
+
+    // 原有Spawn生成玩家方法保留
+    public static void Spawn(BoardManager board, Vector2Int pos)
+    {
+        // 你的原有生成代码
+    }
+}
