@@ -1,0 +1,91 @@
+using UnityEngine;
+using UnityEngine.UIElements;
+
+public class GameManager : MonoBehaviour
+{
+    public static GameManager Instance { get; private set; }
+
+    public BoardManager BoardManager;
+    public PlayerController PlayerController;
+    public TurnManager TurnManager { get; private set; }
+
+    private int m_CurrentLevel;
+    private int m_FoodAmount;
+
+    public UIDocument UIDoc;
+    private UnityEngine.UIElements.Label m_FoodLabel;
+    private VisualElement m_GameOverPanel;
+    private UnityEngine.UIElements.Label m_GameOverMessage;
+
+    private void Awake()
+    {
+        if (Instance != null)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+    }
+
+    void Start()
+    {
+        TurnManager = new TurnManager();
+        TurnManager.OnTick += OnTurnHappen;
+
+        // 绑定UI控件
+        m_FoodLabel = UIDoc.rootVisualElement.Q<UnityEngine.UIElements.Label>("FoodLabel");
+        m_GameOverPanel = UIDoc.rootVisualElement.Q<VisualElement>("GameOverPanel");
+        m_GameOverMessage = m_GameOverPanel.Q<UnityEngine.UIElements.Label>("GameOverMessage");
+
+        StartNewGame();
+    }
+
+    // 全新开局/重置游戏入口
+    public void StartNewGame()
+    {
+        // 隐藏结束弹窗
+        m_GameOverPanel.style.visibility = Visibility.Hidden;
+        // 重置关卡、食物初始值
+        m_CurrentLevel = 1;
+        m_FoodAmount = 20;
+        m_FoodLabel.text = "Food : " + m_FoodAmount;
+        // 清空旧地图、重新生成
+        BoardManager.Clean();
+        BoardManager.Init();
+        // 重置玩家状态、生成玩家
+        PlayerController.Init();
+        PlayerController.Spawn(BoardManager, new Vector2Int(1, 1));
+    }
+
+    // 食物增减核心方法，食物归零触发游戏结束
+    public void ChangeFood(int amount)
+    {
+        m_FoodAmount += amount;
+        m_FoodLabel.text = "Food : " + m_FoodAmount;
+
+        if (m_FoodAmount <= 0)
+        {
+            // 通知玩家控制器停止输入移动
+            PlayerController.GameOver();
+            // 弹出失败弹窗
+            m_GameOverPanel.style.visibility = Visibility.Visible;
+            m_GameOverMessage.text = $"Game Over!\n\nSurvived {m_CurrentLevel} days";
+        }
+    }
+
+    // 每回合自动扣食物
+    void OnTurnHappen()
+    {
+        ChangeFood(-1);
+    }
+
+    private void OnDestroy()
+    {
+        if (TurnManager != null)
+        {
+            TurnManager.OnTick -= OnTurnHappen;
+        }
+        Instance = null;
+    }
+}
